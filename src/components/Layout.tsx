@@ -10,7 +10,6 @@ const Layout: React.FC = () => {
     <div className="min-h-screen relative overflow-hidden" style={{
       background: 'linear-gradient(180deg, #0B0B0F 0%, #14141E 50%, #1A1A2E 100%)'
     }}>
-      {/* Animated Background Effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Grid Pattern */}
         <div 
@@ -24,7 +23,6 @@ const Layout: React.FC = () => {
           }}
         />
 
-        {/* Animated Gradient Orbs */}
         <motion.div
           animate={{
             x: [0, 100, 0],
@@ -81,12 +79,10 @@ const Layout: React.FC = () => {
           }}
         />
 
-        {/* Scanning Line Effect */}
         <motion.div
         />
       </div>
 
-      {/* Noise Texture Overlay */}
       <div 
         className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay"
         style={{
