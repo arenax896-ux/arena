@@ -16,7 +16,7 @@ const notificationSchema = new mongoose.Schema({
   },
   targetAudience: {
     type: String,
-    enum: ['all', 'players', 'organizers', 'specific'],
+    enum: ['all', 'players', 'specific'],
     default: 'all'
   },
   specificUsers: [{
@@ -40,7 +40,7 @@ const notificationSchema = new mongoose.Schema({
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Admin',
+    ref: 'User',
     required: true
   }
 }, {

@@ -15,7 +15,7 @@ export const createNotification = async (req, res) => {
       isScheduled,
       scheduledFor: isScheduled ? scheduledFor : null,
       status: isScheduled ? 'scheduled' : 'draft',
-      createdBy: req.admin._id
+      createdBy: req.user._id
     });
 
     res.status(201).json({
@@ -73,9 +73,55 @@ export const sendNotification = async (req, res) => {
     notification.sentAt = new Date();
     await notification.save();
 
+    if (req.io) {
+      req.io.emit('notification', {
+        id: notification._id,
+        title: notification.title,
+        message: notification.message,
+        type: notification.type,
+        targetAudience: notification.targetAudience,
+        sentAt: notification.sentAt
+      });
+    }
+
     res.json({
       success: true,
       message: 'Notification sent successfully',
+      notification
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const sendBulkNotification = async (req, res) => {
+  try {
+    const { title, message, type } = req.body;
+
+    const notification = await Notification.create({
+      title,
+      message,
+      type: type || 'announcement',
+      targetAudience: 'all',
+      status: 'sent',
+      sentAt: new Date(),
+      createdBy: req.user._id
+    });
+
+    if (req.io) {
+      req.io.emit('notification', {
+        id: notification._id,
+        title: notification.title,
+        message: notification.message,
+        type: notification.type,
+        targetAudience: notification.targetAudience,
+        sentAt: notification.sentAt
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Notification sent to all users',
       notification
     });
   } catch (error) {

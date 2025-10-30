@@ -33,7 +33,7 @@ const tournamentSchema = new mongoose.Schema({
     required: true,
     enum: ['Free Fire', 'PUBG Mobile', 'Call of Duty Mobile', 'Valorant', 'Other']
   },
-  organizer: {
+  createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
@@ -66,7 +66,7 @@ const tournamentSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['pending', 'approved', 'live', 'completed', 'cancelled', 'rejected'],
-    default: 'pending'
+    default: 'approved'
   },
   scheduledDate: {
     type: Date,
@@ -86,7 +86,7 @@ const tournamentSchema = new mongoose.Schema({
   rejectionReason: String,
   adminApprovedBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Admin'
+    ref: 'User'
   },
   adminApprovedAt: Date
 }, {
@@ -94,7 +94,7 @@ const tournamentSchema = new mongoose.Schema({
 });
 
 tournamentSchema.index({ status: 1, scheduledDate: 1 });
-tournamentSchema.index({ organizer: 1 });
+tournamentSchema.index({ createdBy: 1 });
 
 const Tournament = mongoose.model('Tournament', tournamentSchema);
 

@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import Admin from '../models/Admin.js';
+import User from '../models/User.js';
 
 export const protect = async (req, res, next) => {
   let token;
@@ -9,14 +9,14 @@ export const protect = async (req, res, next) => {
       token = req.headers.authorization.split(' ')[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      req.admin = await Admin.findById(decoded.id).select('-password');
+      req.user = await User.findById(decoded.id).select('-password');
 
-      if (!req.admin) {
-        return res.status(401).json({ success: false, message: 'Admin not found' });
+      if (!req.user) {
+        return res.status(401).json({ success: false, message: 'User not found' });
       }
 
-      if (!req.admin.isActive) {
-        return res.status(401).json({ success: false, message: 'Admin account is inactive' });
+      if (req.user.accountStatus !== 'active') {
+        return res.status(401).json({ success: false, message: 'User account is inactive' });
       }
 
       next();
@@ -30,14 +30,13 @@ export const protect = async (req, res, next) => {
   }
 };
 
-export const authorize = (...roles) => {
-  return (req, res, next) => {
-    if (!roles.includes(req.admin.role)) {
-      return res.status(403).json({
-        success: false,
-        message: `User role '${req.admin.role}' is not authorized to access this route`
-      });
-    }
+export const adminOnly = (req, res, next) => {
+  if (req.user && req.user.role === 'admin') {
     next();
-  };
+  } else {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied. Admin only.'
+    });
+  }
 };

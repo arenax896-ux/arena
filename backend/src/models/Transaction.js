@@ -45,7 +45,7 @@ const transactionSchema = new mongoose.Schema({
   paymentReference: String,
   processedBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Admin'
+    ref: 'User'
   },
   status: {
     type: String,

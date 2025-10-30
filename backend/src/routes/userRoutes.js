@@ -6,11 +6,12 @@ import {
   adjustUserCoins,
   getUserStats
 } from '../controllers/userController.js';
-import { protect } from '../middleware/auth.js';
+import { protect, adminOnly } from '../middleware/auth.js';
 
 const router = express.Router();
 
 router.use(protect);
+router.use(adminOnly);
 
 router.get('/', getAllUsers);
 router.get('/stats', getUserStats);

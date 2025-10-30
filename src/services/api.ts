@@ -35,7 +35,7 @@ api.interceptors.response.use(
 );
 
 export const authAPI = {
-  register: (data: { username: string; email: string; password: string; role?: 'super_admin' | 'moderator' }) =>
+  register: (data: { username: string; email: string; password: string; fullName: string; role?: 'admin' | 'player' }) =>
     api.post('/auth/register', data),
   login: (email: string, password: string) =>
     api.post('/auth/login', { email, password }),
@@ -58,6 +58,7 @@ export const userAPI = {
 export const tournamentAPI = {
   getAll: (params?: any) => api.get('/tournaments', { params }),
   getById: (id: string) => api.get(`/tournaments/${id}`),
+  create: (data: any) => api.post('/tournaments', data),
   updateStatus: (id: string, status: string, rejectionReason?: string) =>
     api.put(`/tournaments/${id}/status`, { status, rejectionReason }),
   verifyResult: (data: any) => api.post('/tournaments/verify-result', data),
@@ -75,6 +76,7 @@ export const notificationAPI = {
   create: (data: any) => api.post('/notifications', data),
   getAll: (params?: any) => api.get('/notifications', { params }),
   send: (id: string) => api.post(`/notifications/${id}/send`),
+  sendBulk: (data: { title: string; message: string; type?: string }) => api.post('/notifications/send-bulk', data),
   delete: (id: string) => api.delete(`/notifications/${id}`),
   getStats: () => api.get('/notifications/stats'),
 };

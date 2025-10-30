@@ -5,13 +5,14 @@ import Settings from '../models/Settings.js';
 
 export const getDashboardStats = async (req, res) => {
   try {
-    const totalUsers = await User.countDocuments();
-    const activeUsers = await User.countDocuments({ accountStatus: 'active' });
+    const totalUsers = await User.countDocuments({ role: 'player' });
+    const activeUsers = await User.countDocuments({ role: 'player', accountStatus: 'active' });
     const totalTournaments = await Tournament.countDocuments();
     const liveTournaments = await Tournament.countDocuments({ status: 'live' });
     const pendingTournaments = await Tournament.countDocuments({ status: 'pending' });
 
     const totalCoinsInCirculation = await User.aggregate([
+      { $match: { role: 'player' } },
       { $group: { _id: null, total: { $sum: '$coinBalance' } } }
     ]);
 
@@ -29,7 +30,7 @@ export const getDashboardStats = async (req, res) => {
     last30Days.setDate(last30Days.getDate() - 30);
 
     const userGrowth = await User.aggregate([
-      { $match: { createdAt: { $gte: last30Days } } },
+      { $match: { role: 'player', createdAt: { $gte: last30Days } } },
       {
         $group: {
           _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
@@ -57,8 +58,8 @@ export const getDashboardStats = async (req, res) => {
       { $sort: { _id: 1 } }
     ]);
 
-    const topCoinHolders = await User.find()
-      .select('username email coinBalance userType')
+    const topCoinHolders = await User.find({ role: 'player' })
+      .select('username email coinBalance role')
       .sort({ coinBalance: -1 })
       .limit(5);
 

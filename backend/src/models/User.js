@@ -29,15 +29,14 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-    userType: {
+    role: {
       type: String,
-      enum: ["player", "organizer"],
+      enum: ["admin", "player"],
       default: "player",
     },
     coinBalance: {
       type: Number,
       default: 0,
-      min: 0,
     },
     totalCoinsEarned: {
       type: Number,
@@ -58,9 +57,12 @@ const userSchema = new mongoose.Schema(
     },
     gameStats: {
       totalTournamentsJoined: { type: Number, default: 0 },
-      totalTournamentsCreated: { type: Number, default: 0 },
       totalWins: { type: Number, default: 0 },
       totalKills: { type: Number, default: 0 },
+    },
+    lastLogin: {
+      type: Date,
+      default: null,
     },
   },
   {
@@ -80,6 +82,10 @@ userSchema.pre("save", async function (next) {
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
+
+userSchema.virtual("hasUnlimitedCoins").get(function () {
+  return this.role === "admin";
+});
 
 const User = mongoose.model("User", userSchema);
 

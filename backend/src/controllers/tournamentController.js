@@ -19,7 +19,7 @@ export const getAllTournaments = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const tournaments = await Tournament.find(query)
-      .populate('organizer', 'username email')
+      .populate('createdBy', 'username email')
       .populate('adminApprovedBy', 'username')
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -44,7 +44,7 @@ export const getAllTournaments = async (req, res) => {
 export const getTournamentById = async (req, res) => {
   try {
     const tournament = await Tournament.findById(req.params.id)
-      .populate('organizer', 'username email phoneNumber')
+      .populate('createdBy', 'username email phoneNumber')
       .populate('participants.userId', 'username email')
       .populate('adminApprovedBy', 'username');
 
@@ -69,7 +69,7 @@ export const updateTournamentStatus = async (req, res) => {
 
     tournament.status = status;
     if (status === 'approved') {
-      tournament.adminApprovedBy = req.admin._id;
+      tournament.adminApprovedBy = req.user._id;
       tournament.adminApprovedAt = new Date();
     }
     if (status === 'rejected' && rejectionReason) {
@@ -129,7 +129,7 @@ export const verifyParticipantResult = async (req, res) => {
             category: 'tournament_win',
             description: `Prize for rank ${finalRank} in ${tournament.title}`,
             relatedTournament: tournament._id,
-            processedBy: req.admin._id,
+            processedBy: req.user._id,
             status: 'completed'
           });
         }
@@ -175,6 +175,48 @@ export const getTournamentStats = async (req, res) => {
         totalPrizePool: totalPrizePool[0]?.total || 0,
         totalEntryFees: totalEntryFees[0]?.total || 0
       }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const createTournament = async (req, res) => {
+  try {
+    const {
+      title,
+      description,
+      gameType,
+      entryFee,
+      prizePool,
+      maxParticipants,
+      prizeDistribution,
+      scheduledDate,
+      roomDetails,
+      rules,
+      bannerImage
+    } = req.body;
+
+    const tournament = await Tournament.create({
+      title,
+      description,
+      gameType,
+      createdBy: req.user._id,
+      entryFee,
+      prizePool,
+      maxParticipants,
+      prizeDistribution,
+      scheduledDate,
+      roomDetails,
+      rules,
+      bannerImage,
+      status: 'approved'
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Tournament created successfully',
+      tournament
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

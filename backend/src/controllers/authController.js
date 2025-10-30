@@ -1,28 +1,36 @@
-import Admin from '../models/Admin.js';
+import User from '../models/User.js';
 import { generateToken } from '../utils/jwt.js';
 
 export const register = async (req, res) => {
   try {
-    const { username, email, password, role } = req.body;
+    const { username, email, password, fullName, role } = req.body;
 
-    const exists = await Admin.findOne({ $or: [{ email }, { username }] });
+    const exists = await User.findOne({ $or: [{ email }, { username }] });
     if (exists) {
-      return res.status(400).json({ success: false, message: 'Admin already exists' });
+      return res.status(400).json({ success: false, message: 'User already exists' });
     }
 
-    const admin = await Admin.create({ username, email, password, role });
+    const user = await User.create({
+      username,
+      email,
+      password,
+      fullName,
+      role: role || 'player'
+    });
 
-    const token = generateToken(admin._id, admin.role);
+    const token = generateToken(user._id, user.role);
 
     res.status(201).json({
       success: true,
       token,
-      admin: {
-        id: admin._id,
-        username: admin.username,
-        email: admin.email,
-        role: admin.role,
-        lastLogin: admin.lastLogin
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+        coinBalance: user.coinBalance,
+        lastLogin: user.lastLogin
       }
     });
   } catch (error) {
@@ -34,34 +42,36 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const admin = await Admin.findOne({ email });
-    if (!admin) {
+    const user = await User.findOne({ email });
+    if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
-    const isMatch = await admin.matchPassword(password);
+    const isMatch = await user.matchPassword(password);
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
-    if (!admin.isActive) {
+    if (user.accountStatus !== 'active') {
       return res.status(403).json({ success: false, message: 'Account is inactive' });
     }
 
-    admin.lastLogin = new Date();
-    await admin.save();
+    user.lastLogin = new Date();
+    await user.save();
 
-    const token = generateToken(admin._id, admin.role);
+    const token = generateToken(user._id, user.role);
 
     res.json({
       success: true,
       token,
-      admin: {
-        id: admin._id,
-        username: admin.username,
-        email: admin.email,
-        role: admin.role,
-        lastLogin: admin.lastLogin
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+        coinBalance: user.coinBalance,
+        lastLogin: user.lastLogin
       }
     });
   } catch (error) {
@@ -71,8 +81,8 @@ export const login = async (req, res) => {
 
 export const getProfile = async (req, res) => {
   try {
-    const admin = await Admin.findById(req.admin._id).select('-password');
-    res.json({ success: true, admin });
+    const user = await User.findById(req.user._id).select('-password');
+    res.json({ success: true, user });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

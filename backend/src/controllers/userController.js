@@ -4,9 +4,9 @@ import Tournament from '../models/Tournament.js';
 
 export const getAllUsers = async (req, res) => {
   try {
-    const { search, userType, accountStatus, page = 1, limit = 20 } = req.query;
+    const { search, role, accountStatus, page = 1, limit = 20 } = req.query;
 
-    const query = {};
+    const query = { role: 'player' };
     if (search) {
       query.$or = [
         { username: { $regex: search, $options: 'i' } },
@@ -14,7 +14,7 @@ export const getAllUsers = async (req, res) => {
         { fullName: { $regex: search, $options: 'i' } }
       ];
     }
-    if (userType) query.userType = userType;
+    if (role) query.role = role;
     if (accountStatus) query.accountStatus = accountStatus;
 
     const skip = (page - 1) * limit;
@@ -55,10 +55,7 @@ export const getUserById = async (req, res) => {
       .populate('processedBy', 'username');
 
     const tournaments = await Tournament.find({
-      $or: [
-        { organizer: user._id },
-        { 'participants.userId': user._id }
-      ]
+      'participants.userId': user._id
     }).sort({ createdAt: -1 }).limit(10);
 
     res.json({
@@ -103,6 +100,10 @@ export const adjustUserCoins = async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
+    if (user.role === 'admin') {
+      return res.status(400).json({ success: false, message: 'Cannot adjust admin coins. Admins have unlimited coins.' });
+    }
+
     const balanceBefore = user.coinBalance;
     let balanceAfter;
 
@@ -131,7 +132,7 @@ export const adjustUserCoins = async (req, res) => {
       description,
       paymentMethod: paymentMethod || 'Admin',
       paymentReference,
-      processedBy: req.admin._id,
+      processedBy: req.user._id,
       status: 'completed'
     });
 
@@ -148,15 +149,15 @@ export const adjustUserCoins = async (req, res) => {
 
 export const getUserStats = async (req, res) => {
   try {
-    const totalUsers = await User.countDocuments();
-    const activePlayers = await User.countDocuments({ userType: 'player', accountStatus: 'active' });
-    const activeOrganizers = await User.countDocuments({ userType: 'organizer', accountStatus: 'active' });
+    const totalUsers = await User.countDocuments({ role: 'player' });
+    const activePlayers = await User.countDocuments({ role: 'player', accountStatus: 'active' });
     const totalCoinsInCirculation = await User.aggregate([
+      { $match: { role: 'player' } },
       { $group: { _id: null, total: { $sum: '$coinBalance' } } }
     ]);
 
-    const topCoinHolders = await User.find()
-      .select('username email coinBalance userType')
+    const topCoinHolders = await User.find({ role: 'player' })
+      .select('username email coinBalance role')
       .sort({ coinBalance: -1 })
       .limit(10);
 
@@ -165,7 +166,6 @@ export const getUserStats = async (req, res) => {
       stats: {
         totalUsers,
         activePlayers,
-        activeOrganizers,
         totalCoinsInCirculation: totalCoinsInCirculation[0]?.total || 0,
         topCoinHolders
       }
